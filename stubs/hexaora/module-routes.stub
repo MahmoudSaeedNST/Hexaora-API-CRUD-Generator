@@ -1,0 +1,8 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use {{ controllerNamespace }}\{{ class }}Controller;
+
+Route::prefix('{{ routePrefix }}')->group(function () {
+    Route::apiResource('{{ pluralVariable }}', {{ class }}Controller::class);
+});

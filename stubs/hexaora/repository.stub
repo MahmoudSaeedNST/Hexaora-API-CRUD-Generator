@@ -1,0 +1,68 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ modelNamespace }}\{{ class }};
+use {{ repositoryInterfaceNamespace }}\{{ class }}RepositoryInterface;
+
+class {{ class }}Repository implements {{ class }}RepositoryInterface
+{
+    /**
+     * Get all {{ pluralVariable }}{{ paginationComment }}
+     *
+     * @param int|null $perPage
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator|\Illuminate\Database\Eloquent\Collection
+     */
+    public function all({{ paginationParam }})
+    {
+        {{ paginationLogic }}
+    }
+
+    /**
+     * Find a {{ variable }} by ID
+     *
+     * @param int $id
+     * @return {{ class }}
+     */
+    public function findById(int $id)
+    {
+        return {{ class }}::findOrFail($id);
+    }
+
+    /**
+     * Create a new {{ variable }}
+     *
+     * @param array $data
+     * @return {{ class }}
+     */
+    public function create(array $data)
+    {
+        return {{ class }}::create($data);
+    }
+
+    /**
+     * Update a {{ variable }}
+     *
+     * @param int $id
+     * @param array $data
+     * @return {{ class }}
+     */
+    public function update(int $id, array $data)
+    {
+        ${{ variable }} = $this->findById($id);
+        ${{ variable }}->update($data);
+        return ${{ variable }};
+    }
+
+    /**
+     * Delete a {{ variable }}
+     *
+     * @param int $id
+     * @return bool
+     */
+    public function delete(int $id): bool
+    {
+        ${{ variable }} = $this->findById($id);
+        return ${{ variable }}->delete();
+    }
+}

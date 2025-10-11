@@ -1,0 +1,59 @@
+{
+    "name": "hexaora/api-crud-generator",
+    "description": "A powerful Laravel CRUD generator following Clean Architecture principles with modular structure, API versioning, and comprehensive scaffolding",
+    "keywords": [
+        "laravel",
+        "crud",
+        "generator",
+        "api",
+        "clean-architecture",
+        "scaffolding",
+        "artisan",
+        "modular",
+        "rest",
+        "repository-pattern"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Mahmoud Saeed",
+            "role": "Developer",
+            "homepage": "https://www.youtube.com/@HEXAORA"
+        }
+    ],
+    "homepage": "https://github.com/MahmoudSaeedNST/Hexaora-API-CRUD-Generator",
+    "support": {
+        "issues": "https://github.com/MahmoudSaeedNST/Hexaora-API-CRUD-Generator/issues",
+        "source": "https://github.com/MahmoudSaeedNST/Hexaora-API-CRUD-Generator"
+    },
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^11.0|^12.0",
+        "illuminate/console": "^11.0|^12.0",
+        "illuminate/filesystem": "^11.0|^12.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0",
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Hexaora\\CrudGenerator\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Hexaora\\CrudGenerator\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Hexaora\\CrudGenerator\\HexaoraServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

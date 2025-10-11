@@ -1,0 +1,47 @@
+<?php
+
+namespace {{ namespace }};
+
+interface {{ class }}RepositoryInterface
+{
+    /**
+     * Get all {{ pluralVariable }}{{ paginationComment }}
+     *
+     * @param int|null $perPage
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator|\Illuminate\Database\Eloquent\Collection
+     */
+    public function all({{ paginationParam }});
+
+    /**
+     * Find a {{ variable }} by ID
+     *
+     * @param int $id
+     * @return {{ class }}
+     */
+    public function findById(int $id);
+
+    /**
+     * Create a new {{ variable }}
+     *
+     * @param array $data
+     * @return {{ class }}
+     */
+    public function create(array $data);
+
+    /**
+     * Update a {{ variable }}
+     *
+     * @param int $id
+     * @param array $data
+     * @return {{ class }}
+     */
+    public function update(int $id, array $data);
+
+    /**
+     * Delete a {{ variable }}
+     *
+     * @param int $id
+     * @return bool
+     */
+    public function delete(int $id): bool;
+}

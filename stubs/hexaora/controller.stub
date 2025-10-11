@@ -1,0 +1,70 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ serviceNamespace }}\{{ class }}Service;
+use {{ resourceNamespace }}\{{ class }}Resource;
+use {{ storeRequestNamespace }}\{{ class }}StoreRequest;
+use {{ updateRequestNamespace }}\{{ class }}UpdateRequest;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+
+class {{ class }}Controller
+{
+    /**
+     * Create a new controller instance.
+     */
+    public function __construct(
+        private {{ class }}Service $service
+    ) {}
+
+    /**
+     * Display a listing of {{ pluralVariable }}.
+     */
+    public function index({{ indexParam }}){{ indexReturnType }}
+    {
+        {{ indexBody }}
+    }
+
+    /**
+     * Store a newly created {{ variable }}.
+     */
+    public function store({{ class }}StoreRequest $request): JsonResponse
+    {
+        ${{ variable }} = $this->service->create($request->validated());
+        return (new {{ class }}Resource(${{ variable }}))
+            ->response()
+            ->setStatusCode(201);
+    }
+
+    /**
+     * Display the specified {{ variable }}.
+     */
+    public function show(int $id): JsonResponse
+    {
+        ${{ variable }} = $this->service->getById($id);
+        return (new {{ class }}Resource(${{ variable }}))
+            ->response();
+    }
+
+    /**
+     * Update the specified {{ variable }}.
+     */
+    public function update({{ class }}UpdateRequest $request, int $id): JsonResponse
+    {
+        ${{ variable }} = $this->service->update($id, $request->validated());
+        return (new {{ class }}Resource(${{ variable }}))
+            ->response();
+    }
+
+    /**
+     * Remove the specified {{ variable }}.
+     */
+    public function destroy(int $id): JsonResponse
+    {
+        $this->service->delete($id);
+        return response()->json([
+            'message' => '{{ class }} deleted successfully'
+        ], 200);
+    }
+}

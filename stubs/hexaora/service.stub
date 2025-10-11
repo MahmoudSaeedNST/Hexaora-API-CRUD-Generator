@@ -1,0 +1,74 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ repositoryInterfaceNamespace }}\{{ class }}RepositoryInterface;
+
+class {{ class }}Service
+{
+    /**
+     * Create a new service instance.
+     */
+    public function __construct(
+        private {{ class }}RepositoryInterface $repository
+    ) {}
+
+    /**
+     * Get all {{ pluralVariable }}{{ paginationComment }}
+     *
+     * @param int|null $perPage
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator|\Illuminate\Database\Eloquent\Collection
+     */
+    public function getAll({{ paginationParam }})
+    {
+        return $this->repository->all({{ paginationCall }});
+    }
+
+    /**
+     * Get a {{ variable }} by ID
+     *
+     * @param int $id
+     * @return mixed
+     */
+    public function getById(int $id)
+    {
+        return $this->repository->findById($id);
+    }
+
+    /**
+     * Create a new {{ variable }}
+     *
+     * @param array $data
+     * @return mixed
+     */
+    public function create(array $data)
+    {
+        // Additional business logic can go here
+        return $this->repository->create($data);
+    }
+
+    /**
+     * Update a {{ variable }}
+     *
+     * @param int $id
+     * @param array $data
+     * @return mixed
+     */
+    public function update(int $id, array $data)
+    {
+        // Additional business logic can go here
+        return $this->repository->update($id, $data);
+    }
+
+    /**
+     * Delete a {{ variable }}
+     *
+     * @param int $id
+     * @return bool
+     */
+    public function delete(int $id): bool
+    {
+        // Additional business logic can go here
+        return $this->repository->delete($id);
+    }
+}
