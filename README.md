@@ -16,7 +16,10 @@ A Laravel CRUD generator that follows Clean Architecture principles with modular
 - 📄 **API Resources**: Creates Eloquent API resource classes
 - 🗄️ **Migration Support**: Generates database migrations with field definitions
 - 🛣️ **Route Generation**: Creates route files with proper namespacing
-- 🔧 **Configurable**: Support for soft deletes, pagination, field types, and more
+- � **Policy Generation**: Auto-generates authorization policies (with optional Spatie support)
+- 🏭 **Factory Generation**: Creates smart model factories with intelligent faker mapping
+- 🌱 **Seeder Generation**: Generates database seeders with global linking
+- �🔧 **Configurable**: Support for soft deletes, pagination, field types, and more
 - 📚 **Comprehensive**: Generates 10+ files per entity in proper structure
 
 ## Requirements
@@ -37,10 +40,10 @@ The package will automatically register the service provider.
 Optionally, you can publish the stubs and config file:
 
 ```bash
-# Publish stubs (optional)
+# Publish stubs 
 php artisan vendor:publish --tag="hexaora-stubs"
 
-# Publish config (optional)
+# Publish config 
 php artisan vendor:publish --tag="hexaora-config"
 ```
 
@@ -67,6 +70,46 @@ This will generate:
 - Routes (`app/Modules/Catalog/routes/api.php`)
 
 ### Advanced Usage
+
+#### Generate Everything at Once (New in v1.1.0)
+
+```bash
+php artisan make:hexaora Product --module=Inventory --fields="name:string,price:decimal:10,2" --all
+```
+
+The `--all` flag generates:
+- All core CRUD files (model, controller, service, repository, etc.)
+- Policy class with authorization logic
+- Factory with intelligent faker field mapping
+- Seeder for testing data
+- Permission seeder (if Spatie mode is enabled)
+
+#### With Policy Authorization (New in v1.1.0)
+
+```bash
+php artisan make:hexaora Product --module=Catalog --fields="name:string,price:decimal:10,2" --policy
+```
+
+Generates a policy class and auto-registers it in `AuthServiceProvider`. For Spatie permission integration, enable in config:
+
+```php
+// config/hexaora.php
+'policies' => [
+    'spatie' => true,  // Enable Spatie permissions
+],
+```
+
+#### With Factory and Seeder (New in v1.1.0)
+
+```bash
+php artisan make:hexaora Product --module=Inventory --fields="name:string,sku:string:unique,price:decimal:10,2,description:text" --factory --seeder
+```
+
+This generates:
+- Smart factory with intelligent faker methods based on field types and names
+- Seeder that uses the factory
+- Global linker files (`database/api_factories.php`, `database/api_seeders.php`)
+- Master `ApiSeeder` class
 
 #### With API Versioning
 
@@ -121,6 +164,10 @@ php artisan make:hexaora Order --module=Sales --fields="customer_id:foreignId:ca
 | `--api-version` | API version | `--api-version=v1` |
 | `--no-pagination` | Disable pagination | `--no-pagination` |
 | `--softdeletes` | Add soft deletes | `--softdeletes` |
+| `--policy` | Generate policy class ⭐ New | `--policy` |
+| `--factory` | Generate factory class ⭐ New | `--factory` |
+| `--seeder` | Generate seeder class ⭐ New | `--seeder` |
+| `--all` | Generate everything (policy, factory, seeder) ⭐ New | `--all` |
 | `--force` | Overwrite existing files | `--force` |
 
 ## Post-Generation Setup
@@ -161,6 +208,18 @@ Or for versioned APIs:
 require app_path('Modules/YourModule/routes/api_v1.php');
 ```
 
+### 4. Seed Test Data (Optional - v1.1.0+)
+
+If you generated factories and seeders, run:
+
+```bash
+# Seed all API module data at once
+php artisan db:seed --class=ApiSeeder
+
+# Or seed specific module
+php artisan db:seed --class=\\App\\Modules\\YourModule\\Database\\Seeders\\YourEntitySeeder
+```
+
 ## Generated File Structure
 
 ```
@@ -174,8 +233,16 @@ app/Modules/YourModule/
 ├── Domain/
 │   ├── Models/
 │   │   └── Entity.php
-│   └── Repositories/
-│       └── EntityRepositoryInterface.php
+│   ├── Repositories/
+│   │   └── EntityRepositoryInterface.php
+│   └── Policies/                        ⭐ New (with --policy or --all)
+│       └── EntityPolicy.php
+├── Database/                             ⭐ New (with --factory or --seeder)
+│   ├── factories/
+│   │   └── EntityFactory.php
+│   └── seeders/
+│       ├── EntitySeeder.php
+│       └── EntityPermissionSeeder.php    (if Spatie mode enabled)
 ├── Infrastructure/
 │   ├── Repositories/
 │   │   └── EntityRepository.php
@@ -186,6 +253,23 @@ app/Modules/YourModule/
 │       └── EntityController.php (or V1/Controllers/ for versioned)
 └── routes/
     └── api.php (or api_v1.php for versioned)
+```
+
+### Global Files (v1.1.0+)
+
+When using `--factory` or `--seeder`, these global files are auto-created and maintained:
+
+```
+database/
+├── api_factories.php          # Links all module factories
+├── api_seeders.php            # Registry of all module seeders
+└── seeders/
+    └── ApiSeeder.php          # Master seeder to run all module seeders
+```
+
+Run all seeders with:
+```bash
+php artisan db:seed --class=ApiSeeder
 ```
 
 ## API Endpoints
@@ -203,6 +287,93 @@ The generated controller provides these endpoints:
 For versioned APIs, the URI includes the version: `/api/v1/module/entities`
 
 ## Examples
+
+### Complete E-commerce Product with Authorization (New in v1.1.0)
+
+```bash
+php artisan make:hexaora Product \
+    --module=Catalog \
+    --fields="name:string,sku:string:unique,price:decimal:10,2,cost:decimal:10,2,description:text,category_id:foreignId:cascade,is_active:boolean" \
+    --all
+```
+
+This generates everything including policy, factory, and seeder!
+
+### Blog System with Testing Data
+
+```bash
+php artisan make:hexaora Post \
+    --module=Blog \
+    --softdeletes \
+    --fields="title:string,slug:string:unique,content:text,excerpt:text,author_id:foreignId:cascade,published_at:timestamp,is_featured:boolean" \
+    --factory \
+    --seeder
+```
+
+### User Management with Policies
+
+```bash
+php artisan make:hexaora User \
+    --module=Auth \
+    --api-version=v1 \
+    --fields="name:string,email:string:unique,email_verified_at:timestamp,password:string" \
+    --policy
+```
+
+## Configuration
+
+Publish the config file to customize behavior:
+
+```bash
+php artisan vendor:publish --tag="hexaora-config"
+```
+
+### Available Configuration Options
+
+```php
+// config/hexaora.php
+
+return [
+    'module_namespace' => 'App\\Modules',
+    
+    'pagination' => [
+        'per_page' => 15,
+    ],
+    
+    'policies' => [
+        'spatie' => false,           // Enable Spatie permission integration
+        'namespace' => 'App\\Modules\\{module}\\Domain\\Policies',
+        'auto_register' => true,     // Auto-register in AuthServiceProvider
+    ],
+    
+    'factories' => [
+        'count' => 10,               // Default factory count in seeders
+        'namespace' => 'App\\Modules\\{module}\\Database\\Factories',
+    ],
+    
+    'seeders' => [
+        'namespace' => 'App\\Modules\\{module}\\Database\\Seeders',
+    ],
+];
+```
+
+### Intelligent Factory Field Mapping (v1.1.0)
+
+The factory generator intelligently maps fields to appropriate Faker methods:
+
+| Field Pattern | Faker Method | Example |
+|--------------|--------------|---------|
+| `email` | `faker->unique()->safeEmail()` | john@example.com |
+| `phone` | `faker->phoneNumber()` | (555) 123-4567 |
+| `address` | `faker->address()` | 123 Main St, City |
+| `url`, `website` | `faker->url()` | https://example.com |
+| `image`, `photo` | `faker->imageUrl()` | https://via.placeholder.com/640x480 |
+| `title`, `name` | `faker->words(3, true)` | Lorem Ipsum Dolor |
+| `description`, `content` | `faker->paragraph()` | Long text... |
+| `decimal`, `price` | `faker->randomFloat(2, 10, 1000)` | 523.45 |
+| `boolean` | `faker->boolean()` | true/false |
+| `date` | `faker->date()` | 2024-01-15 |
+| `foreignId` | `RelatedModel::factory()` | Auto-creates relation |
 
 ### E-commerce Product Management
 

@@ -1,0 +1,31 @@
+<?php
+
+namespace {{ namespace }};
+
+use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Permission;
+
+class {{ class }}PermissionSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        $permissions = [
+            'view_any_{{ modelLower }}',
+            'view_{{ modelLower }}',
+            'create_{{ modelLower }}',
+            'update_{{ modelLower }}',
+            'delete_{{ modelLower }}',
+            'restore_{{ modelLower }}',
+            'force_delete_{{ modelLower }}',
+        ];
+
+        foreach ($permissions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        $this->command->info('{{ model }} permissions created successfully.');
+    }
+}

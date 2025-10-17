@@ -5,6 +5,12 @@ namespace Hexaora\CrudGenerator\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use Hexaora\CrudGenerator\Generators\ExtensionGenerators\PolicyGenerator;
+use Hexaora\CrudGenerator\Generators\ExtensionGenerators\FactoryGenerator;
+use Hexaora\CrudGenerator\Generators\ExtensionGenerators\SeederGenerator;
+use Hexaora\CrudGenerator\Generators\ExtensionGenerators\PermissionSeederGenerator;
+use Hexaora\CrudGenerator\Services\StubProcessor;
+use Hexaora\CrudGenerator\Services\FileManager;
 
 class MakeHexaoraCommand extends Command
 {
@@ -19,6 +25,10 @@ class MakeHexaoraCommand extends Command
                             {--api-version= : API version (e.g., v1)}
                             {--no-pagination : Disable pagination}
                             {--softdeletes : Add soft deletes}
+                            {--policy : Generate policy class}
+                            {--factory : Generate factory class}
+                            {--seeder : Generate seeder class}
+                            {--all : Generate everything (policy, factory, seeder)}
                             {--force : Overwrite existing files}';
 
     /**
@@ -52,6 +62,12 @@ class MakeHexaoraCommand extends Command
         $noPagination = $this->option('no-pagination');
         $softDeletes = $this->option('softdeletes');
         $force = $this->option('force');
+        
+        // Handle --all flag
+        $generateAll = $this->option('all');
+        $generatePolicy = $this->option('policy') || $generateAll;
+        $generateFactory = $this->option('factory') || $generateAll;
+        $generateSeeder = $this->option('seeder') || $generateAll;
 
         // Parse fields
         if ($this->option('fields')) {
@@ -97,6 +113,46 @@ class MakeHexaoraCommand extends Command
             // 10. Generate Route File
             $generatedFiles[] = $this->generateRouteFile($entity, $module, $apiVersion);
 
+            // 11. Generate Policy (optional) - Using new architecture
+            if ($generatePolicy) {
+                $generatedFiles[] = $this->generateWithGenerator(
+                    PolicyGenerator::class,
+                    $entity,
+                    $module,
+                    ['policy' => true, 'force' => $force]
+                );
+            }
+
+            // 12. Generate Factory (optional) - Using new architecture
+            if ($generateFactory) {
+                $generatedFiles[] = $this->generateWithGenerator(
+                    FactoryGenerator::class,
+                    $entity,
+                    $module,
+                    ['factory' => true, 'force' => $force]
+                );
+            }
+
+            // 13. Generate Seeder (optional) - Using new architecture
+            if ($generateSeeder) {
+                $generatedFiles[] = $this->generateWithGenerator(
+                    SeederGenerator::class,
+                    $entity,
+                    $module,
+                    ['seeder' => true, 'force' => $force]
+                );
+            }
+
+            // 14. Generate Permission Seeder (optional, Spatie mode) - Using new architecture
+            if ($generateSeeder && config('hexaora.policies.spatie', false)) {
+                $generatedFiles[] = $this->generateWithGenerator(
+                    PermissionSeederGenerator::class,
+                    $entity,
+                    $module,
+                    ['seeder' => true, 'force' => $force]
+                );
+            }
+
             // Display success messages
             foreach ($generatedFiles as $file) {
                 $this->info("✓ {$file['type']} created: {$file['path']}");
@@ -128,6 +184,19 @@ class MakeHexaoraCommand extends Command
             $this->error('Error: ' . $e->getMessage());
             return 1;
         }
+    }
+
+    /**
+     * Generate using a Generator class (new architecture)
+     */
+    protected function generateWithGenerator(string $generatorClass, string $entity, string $module, array $options): array
+    {
+        $stubProcessor = new StubProcessor();
+        $fileManager = new FileManager($options['force'] ?? false);
+        
+        $generator = new $generatorClass($stubProcessor, $fileManager, $this->fields);
+        
+        return $generator->generate($entity, $module, $options);
     }
 
     /**
@@ -230,6 +299,7 @@ class MakeHexaoraCommand extends Command
             'table' => $table,
             'apiVersion' => $apiVersion ?? '',
             'apiVersionNamespace' => $apiVersionNamespace,
+            'modelNamespace' => "{$rootNamespace}\\Domain\\Models",
         ];
     }
 
@@ -619,10 +689,38 @@ class MakeHexaoraCommand extends Command
             'routePrefix' => $routePrefix,
         ]);
 
-        $content = $this->getStubContent('module-routes', $replacements);
         $path = app_path("Modules/{$module}/routes/{$routeFileName}");
         
-        $this->generateFile($path, $content, $this->option('force'));
+        // If route file doesn't exist, create it with full stub content
+        if (!File::exists($path)) {
+            $content = $this->getStubContent('module-routes', $replacements);
+            $this->generateFile($path, $content, false);
+        } else {
+            // Route file exists, append new route
+            $useStatement = "use {$controllerNamespace}\\{$entity}Controller;";
+            $routeStatement = "Route::prefix('{$routePrefix}')->group(function () {\n    Route::apiResource('{$common['pluralVariable']}', {$entity}Controller::class);\n});";
+            
+            $existingContent = File::get($path);
+            
+            // Check if this controller is already imported
+            if (!Str::contains($existingContent, $useStatement)) {
+                // Find the last use statement and add after it
+                if (preg_match('/^use .+;$/m', $existingContent, $matches, PREG_OFFSET_CAPTURE)) {
+                    $lastUsePosition = $matches[0][1] + strlen($matches[0][0]);
+                    $existingContent = substr_replace($existingContent, "\n{$useStatement}", $lastUsePosition, 0);
+                } else {
+                    // No use statements found, add after <?php
+                    $existingContent = str_replace("<?php\n", "<?php\n\n{$useStatement}\n", $existingContent);
+                }
+            }
+            
+            // Append route at the end of the file
+            if (!Str::contains($existingContent, "{$entity}Controller::class")) {
+                $existingContent = rtrim($existingContent) . "\n\n{$routeStatement}\n";
+            }
+            
+            File::put($path, $existingContent);
+        }
         
         return ['type' => 'Route file', 'path' => $path];
     }
